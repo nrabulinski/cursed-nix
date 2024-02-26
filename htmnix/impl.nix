@@ -1,7 +1,7 @@
 builtins.scopedImport
   {
     __findFile =
-      _: tag: attrs: body:
+      _: tag: attrs:
       let
         # stolen from nixpkgs/lib
         # ===
@@ -9,12 +9,23 @@ builtins.scopedImport
         # ===
         attrs' = mapAttrsToList (name: value: ''${name}="${value}"'') attrs;
         attrString = builtins.concatStringsSep " " attrs';
-        childString = builtins.concatStringsSep "\n" body;
+        elem = "<${tag} ${attrString}>";
       in
-      ''
-        <${tag} ${attrString}>
-          ${childString}
-        </${tag}>
-      '';
+      {
+        outPath = elem;
+        __functor =
+          _: body:
+          let
+            childString = if builtins.isList body then builtins.concatStringsSep "\n" body else toString body;
+          in
+          if body == null then
+            elem
+          else
+            ''
+              ${elem}
+              ${childString}
+              </${tag}>
+            '';
+      };
   }
   ./doc.nix
